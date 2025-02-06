@@ -1,0 +1,11 @@
+name: pulse
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - snakemake
+  - pandas
+  - ca-certificates
+  - certifi
+  - openssl
+prefix: ./envs
