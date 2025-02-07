@@ -2,7 +2,7 @@
 
 These are scripts for quickly stashing a few federal datasets before they're purged. Mostly based on what datasets I use for work, mostly R scripts I threw together quickly. Some of the scripts aren't great but they get the job done. I only study 2 states for my jobs but most of these I just pulled nationally.
 
-When necessary / easy enough, many of these scripts run in parallel. Lots of files, esp. rasters or record-level data, will be upwards of a couple hundred MD to a gig.
+When necessary / easy enough, many of these scripts run in parallel. Lots of files, esp. rasters or record-level data, will be upwards of a couple hundred MB to a gig.
 
 | directory  | dataset name                                                                                                               |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
