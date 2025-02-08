@@ -1,50 +1,64 @@
-# requires an in-house package: remotes::install_github("ct-data-haven/cwi")
 library(dplyr)
 library(purrr)
 library(future)
 
-plan(multisession)
+plan(multisession(workers = 14))
 
-acs <- cwi::acs_vars |>
-    mutate(table = stringr::str_remove(name, "_.+$")) |>
-    distinct(table, concept)
+all_states <- unique(tidycensus::fips_codes$state)
+states <- c("CT", "MD")
 
-dec <- cwi::decennial_vars |>
-    mutate(table = stringr::str_remove(name, "_.+$")) |>
-    distinct(table, concept)
+datasets <- list(
+    acs = list(year = c(2018, 2023), dataset = "acs5"),
+    dec = list(year = 2020, dataset = "dhc")
+) |>
+    tibble::enframe() |>
+    tidyr::unnest_wider(value) |>
+    tidyr::unnest(year) |>
+    mutate(tbl = map2(year, dataset, tidycensus::load_variables, cache = TRUE)) |>
+    mutate(tbl = map(tbl, mutate, table = stringr::str_remove(name, "_.+$"))) |>
+    mutate(tbl = map(tbl, filter, !grepl("^PUMA", name))) |>
+    mutate(tbl = map(tbl, \(x) unique(x$table))) |>
+    mutate(tbl = map(tbl, \(x) stringr::str_subset(x, "PR", negate = TRUE))) |>
+    tidyr::expand_grid(state = states) |>
+    mutate(data_id = paste(name, dataset, sep = "_")) |>
+    select(-dataset) |>
+    mutate(base_dir = file.path(data_id, tolower(state), year)) 
 
-datasets <- tibble::lst(acs, dec)
-states <- c(CT = "09", MD = "24")
-year <- 2023
+# make dirs like acs/ct/2023
+nested_mkdir <- function(p) {
+    system2("mkdir", c("-p", p))
+    invisible(p)
+}
 
-imap(states, function(fips, state) {
-    imap(datasets, function(data_tbl, data_id) {
-        dir <- paste(state, data_id, sep = "_")
-        if (!dir.exists(dir)) {
-            dir.create(dir)
-        }
-        furrr::future_map(data_tbl$table, function(tbl) {
-            path <- file.path(dir, tbl) |> xfun::with_ext("rds")
-            if (!file.exists(path)) {
-                if (data_id == "acs") {
-                    fun <- cwi::multi_geo_acs
-                } else {
-                    fun <- cwi::multi_geo_decennial
-                }
-                df <- fun(
-                    table = tbl,
-                    # year = year, 
-                    state = state, 
-                    tracts = "all", 
-                    us = TRUE, 
-                    sleep = 3,
-                    verbose = FALSE
-                )
-                saveRDS(df, path)
-                path
+map(datasets$base_dir, nested_mkdir)
 
+datasets |>
+    tidyr::unnest(tbl) |>
+    furrr::future_pwalk(function(name, year, tbl, state, data_id, base_dir) {
+        path <- file.path(base_dir, tbl) |> xfun::with_ext("rds")
+        if (!file.exists(path)) {
+            if (name == "acs") {
+                fun <- cwi::multi_geo_acs
+            } else if (name == "dec") {
+                fun <- cwi::multi_geo_decennial
+            } else {
+                cli::cli_alert_danger("{path} failed")
+                return(NULL)
             }
-        }, .options = furrr::furrr_options(seed = TRUE))
-    })
-})
+            df <- fun(
+                table = tbl,
+                year = year,
+                state = state,
+                tracts = "all",
+                blockgroups = "all",
+                us = TRUE,
+                sleep = 3,
+                verbose = FALSE
+            )
+            saveRDS(df, path)
+            cli::cli_alert_success("{path} written")
+        }
+    }, .options = furrr::furrr_options(seed = TRUE), .progress = TRUE)
+
+plan(sequential)
 
