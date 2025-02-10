@@ -6,20 +6,42 @@ library(future)
 
 plan(multisession)
 
+safe_arc_open <- possibly(arcgislayers::arc_open, otherwise = NULL)
+
 base_url <- "https://services.arcgis.com/XG15cJAlne2vxtgt/ArcGIS/rest/services"
-services <- arcgislayers::arc_open(base_url)[["services"]] |>
+# arc_open returns data frame with cols name, type, url
+all_services <- arcgislayers::arc_open(base_url)[["services"]] |>
     as_tibble() |>
-    filter(grepl("(vulnerable|vulnerability|floodplain$|climrr|justice|brownfield|risk_index|food_access)", tolower(name)) |
-        grepl("(EPA|NRI)", name)) |>
     filter(!grepl("(Guam|Puerto.?Rico|^POST_|.+_NRI)", name)) |>
     filter(type == "FeatureServer") |>
-    mutate(service = map(url, arc_open)) |>
-    mutate(desc = map_chr(service, "serviceDescription"))
+    mutate(url = stringr::str_replace_all(url, " ", "%20")) |>
+    mutate(service = furrr::future_map(url, safe_arc_open, .options = furrr::furrr_options(seed = TRUE))) |>
+    mutate(desc = map_chr(service, function(x) {
+        if (is.null(x)) {
+            NA_character_
+        } else {
+            x[["serviceDescription"]]
+        }
+    }))
+
+services <- all_services |>
+    filter(lengths(service) > 0) |>
+    mutate(subset = grepl("(vulnerable|vulnerability|floodplain$|resilience|climrr|justice|brownfield|risk_index|food_access)", tolower(name)) |
+        grepl("(EPA|NRI|CJEST|CRCI_FEMA|Digital_Distress)", name) |
+        name %in% c(
+            "All_Zip_Count", "EPA_Radiation_Air_Monitors",
+            "Equity_Vulnerability_Static_Tracts_Health_Places_Index_30_PHASC",
+            "Cold_Wave_Hazard", "Extreme_Heat_Hazard", "High_Density_Vulnerable_Places", "High_Flooded_Water_Mark"
+        ))
+
 
 services |>
     select(-service) |>
     readr::write_csv("fema/fema_arc_services.csv")
 
+service_has_layers <- function(service) {
+    !is.null(service$layers)
+}
 
 read_layers <- function(service) {
     layers <- arcgislayers::get_all_layers(service)
@@ -45,6 +67,8 @@ write_layers <- function(layers_sf, path) {
 safe_write <- purrr::possibly(write_layers, otherwise = NULL)
 
 services |>
+    mutate(has_layers = map_lgl(service, service_has_layers)) |>
+    filter(subset, has_layers) |>
     mutate(path = file.path("fema", name) |> xfun::with_ext("gpkg")) |>
     select(service, path) |>
     furrr::future_pwalk(function(service, path) {
