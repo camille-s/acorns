@@ -17,6 +17,7 @@ When necessary / easy enough, many of these scripts run in parallel. Lots of fil
 | yrbs       | Youth Risk Behavior Survey, many years. One of the first datasets purged bc it includes samples of trans teenagers in recent years. This scrapes a Wayback Machine snapshot. |                                                                                 |
 | ejscreen   | Environmental justice indexes from EPA. Scales environmental hazards based on socially vulnerable populations. Tracts & block groups, several years, whole country.          | Already missing web link, now removed from server. Available on Wayback Machine |
 | fema       | Spatial data from FEMA's ArcGIS portal, including copies already removed from CDC portal. Fairly large and random.                                                           |                                                                                 |
+| hud        | HUD's Picture of Subsidized Housing and point-in-time homelessness counts                                                                                                    |                                                                                 |
 
 I'll add to this as I go. Please fork, holler at the [Archive Team](https://github.com/ArchiveTeam/usgovernment-grab), and get into local mutual aid.
 
