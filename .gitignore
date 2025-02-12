@@ -3,3 +3,6 @@
 **/*.xlsb
 **/*.zip
 **/*.rds
+sipp/**/*.txt
+**/*.json
+**/*.xls
