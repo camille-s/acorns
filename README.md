@@ -18,6 +18,7 @@ When necessary / easy enough, many of these scripts run in parallel. Lots of fil
 | ejscreen   | Environmental justice indexes from EPA. Scales environmental hazards based on socially vulnerable populations. Tracts & block groups, several years, whole country.          | Already missing web link, now removed from server. Available on Wayback Machine |
 | fema       | Spatial data from FEMA's ArcGIS portal, including copies already removed from CDC portal. Fairly large and random.                                                           |                                                                                 |
 | hud        | HUD's Picture of Subsidized Housing and point-in-time homelessness counts                                                                                                    |                                                                                 |
+| cdc_bulk   | Batch of data from CDC data portal based on keywords (mostly things mentioning race/ethnicity, gender, environment). Sorted by publishing agency                             | Some datasets are already gone, such as YRBS                                                                                |
 
 I'll add to this as I go. Please fork, holler at the [Archive Team](https://github.com/ArchiveTeam/usgovernment-grab), and get into local mutual aid.
 
