@@ -48,3 +48,11 @@ print_errors <- function(path, result) {
         cli::cli_alert_success("{path} written")
     }
 }
+
+print_file_write <- function(path) {
+    if (file.exists(path)) {
+        cli::cli_alert_success("{path} written")
+    } else {
+        cli::cli_alert_danger("{path} failed")
+    }
+}
