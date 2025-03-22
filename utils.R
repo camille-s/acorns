@@ -56,3 +56,14 @@ print_file_write <- function(path) {
         cli::cli_alert_danger("{path} failed")
     }
 }
+
+set_path <- function(url, path, last_only = FALSE) {
+    if (last_only) {
+        dir <- dirname(url)
+        url <- file.path(dir, path)
+    } else {
+        urltools::path(url) <- path
+    }
+    url
+}
+

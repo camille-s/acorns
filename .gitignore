@@ -6,3 +6,5 @@
 sipp/**/*.txt
 **/*.json
 **/*.xls
+**/*.duckdb
+**/*.csv.zip
